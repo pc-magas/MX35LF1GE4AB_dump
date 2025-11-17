@@ -1,5 +1,6 @@
+from spidev import SpiDev
 
-def check_chip(spi):
+def check_chip(spi:SpiDev):
     resp = spi.xfer2([0x9F, 0x00, 0x00, 0x00])
     if(resp[2] == 0xC2):
         print("Macronix MX35LF1GE4AB found")
@@ -32,7 +33,7 @@ def print_feature_table(feature_value, bit_definitions):
         print(f"{bit:>3} | {name:<25} | {status}")
 
 
-def get_features(spi):
+def get_features(spi:SpiDev):
     """
     Iterate over feature register addresses, read via SPI, and print a table.
     """

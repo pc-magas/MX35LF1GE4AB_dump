@@ -1,5 +1,8 @@
+import argparse
 import spidev
 from spi_helper import get_features, check_chip
+from dump import SPIDump
+from file import open_file
 
 # Create SPI object
 spi = spidev.SpiDev()
@@ -13,6 +16,13 @@ check_chip(spi)
 print("Get features")
 get_features(spi)
 
+parser = argparse.ArgumentParser(description="SPI flash dump to file")
+parser.add_argument("filename", help="Output file to save the flash dump")
+args = parser.parse_args()
+filename = args.filename
 
+with open_file(filename) as f:
+    dump = SPIDump(spi, f)
+    dump.dump()
 
 spi.close()
