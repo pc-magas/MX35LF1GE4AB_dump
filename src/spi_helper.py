@@ -1,18 +1,15 @@
 from spidev import SpiDev
+from time import sleep
 
-def check_chip(spi:SpiDev):
-    resp = spi.xfer2([0x9F, 0x00, 0x00, 0x00])
-    if(resp[2] == 0xC2):
-        print("Macronix MX35LF1GE4AB found")
-        if(resp[3] == 0x12):
-            print("Device type is SERIAL NAND flash chip")
-        else:
-            print("Uknown type")
-            exit(1)
-    else:
-        print("Device not found")
-        exit(1)
+def extract_bit(value: int, bit_index: int) -> bool:
+    """
+    Extract the i-th bit of a byte and return True if it is 1, False if 0.
 
+    :param value: Integer value (0-255)
+    :param bit_index: Bit position (0 = LSB, 7 = MSB)
+    :return: True if bit is 1, False if 0
+    """
+    return ((value >> bit_index) & 1) == 1
 
 def print_feature_table(feature_value, bit_definitions):
     """
@@ -28,9 +25,26 @@ def print_feature_table(feature_value, bit_definitions):
 
     for bit in range(7, -1, -1):
         name = bit_definitions.get(bit, 'Reserved')
-        value = (feature_value >> bit) & 1
-        status = 'Yes' if value else 'No'
+        enabled = extract_bit(feature_value, bit)
+        status = 'Yes' if enabled else 'No'
         print(f"{bit:>3} | {name:<25} | {status}")
+
+def check_chip(spi:SpiDev):
+    """
+    Checks chip manuifacturer and type
+    It exists if wrong type
+    """
+    resp = spi.xfer2([0x9F, 0x00, 0x00, 0x00])
+    if(resp[2] == 0xC2):
+        print("Macronix MX35LF1GE4AB found")
+        if(resp[3] == 0x12):
+            print("Device type is SERIAL NAND flash chip")
+        else:
+            print("Uknown type")
+            exit(1)
+    else:
+        print("Device not found")
+        exit(1)
 
 
 def get_features(spi:SpiDev):
@@ -79,3 +93,23 @@ def get_features(spi:SpiDev):
         print(f"\n--- Feature Register 0x{reg_addr:02X} ---")
         print_feature_table(feature_value, bit_defs)
 
+
+
+def poll_operation_complete(spi:SpiDev)-> int:
+    """
+    Poll the flash until the OIP (Operation In Progress) bit clears in feature address 0xC0.
+    
+    :param spi: Initialized SpiDev instance
+    :return: Final status byte of register 0xC0
+    """
+
+    status=None
+    while True:
+        resp = spi.xfer2([0x0F, 0xC0, 0x00])
+        status = resp[2]
+        oip = status & 0x1
+        if oip == 0:
+            break
+        sleep(0.001)
+    
+    return status

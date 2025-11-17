@@ -23,6 +23,6 @@ filename = args.filename
 
 with open_file(filename) as f:
     dump = SPIDump(spi, f)
-    dump.dump()
+    # dump.dump()
 
 spi.close()

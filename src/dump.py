@@ -10,5 +10,5 @@ class SPIDump:
         self.__file = file      # store the file object
 
     def dump(self):
-        # TODO implement dump
-        pass
+        result=self.__spi.xfer2([0x13,0x00,0x00,0x00])
+        result=self.__spi.xfer2([0x31,0x00,0x00,0x00])
