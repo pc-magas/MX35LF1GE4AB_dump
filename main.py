@@ -9,7 +9,7 @@ device_id=0xC212
 
 # Send and receive data
 resp = spi.xfer2([0x09])
-
+print(resp)
 if(resp == device_id):
     print("Macronix MX35LF1GE4AB found")
     print("Device Id:"+resp) 
