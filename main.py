@@ -11,10 +11,10 @@ print(resp)
 if(resp[2] == 0xC2):
     print("Macronix MX35LF1GE4AB found")
     if(resp[3] == 0x12):
-	print("Device type is SERIAL NAND")
+	    print("Device type is SERIAL NAND")
     else:
-	print("Uknown type")
-	exit(1)
+	    print("Uknown type")
+	    exit(1)
 else:
     print("Device not found")
     exit(1)
