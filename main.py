@@ -19,4 +19,10 @@ else:
     print("Device not found")
     exit(1)
 
+print("Get features")
+
+resp = spi.xfer2([0x0F, 0xB0, 0x00, 0x00])
+
+print(resp)
+
 spi.close()
