@@ -1,6 +1,7 @@
 from spidev import SpiDev
 from typing import IO
 from time import sleep
+from bit_utils import high_byte,low_byte
 
 def poll_operation_complete(spi:SpiDev)-> int:
     """
@@ -22,12 +23,23 @@ def poll_operation_complete(spi:SpiDev)-> int:
     return status
 
 class SPIDump:
-    def __init__(self, spi: SpiDev, file: IO):
+    def __init__(self, spi: SpiDev,
+                 file: IO,
+                 total_blocks: int = 1024,
+                 pages_per_block: int = 64):
         """
         Initialize the SPI dump with an existing SpiDev object and a file-like object.
+        :spi: The Interface used from flash rom
+        :file: The file handler to dump flash
+        :total_blocks: blocks flash memory has
+        :pages_per_block: total pages flash memory has
         """
-        self.__spi = spi        # use the passed SpiDev instance
-        self.__file = file      # store the file object
+        self.__spi = spi
+        self.__file = file
+
+        self.__total_blocks=total_blocks
+        self.__pages_per_block=pages_per_block
+
 
     def __reset(self):
         self.__spi.xfer2([0xFF])
@@ -47,3 +59,17 @@ class SPIDump:
 
         # READ (0x31)
         (result,status) = self.__send_command(0x31, page_addr)
+
+        for block in range(self.__total_blocks):
+            for page in range(self.__pages_per_block):
+                # From bit16 - bit0 is the block whilst the page takes over last 6 bits
+                row = (block << 6) | page
+                # the 0xFF trims into 16bit
+                addr24 = [high_byte(row), low_byte(row), 0]
+                cmd = [0x03] + addr24 + [0x00]  # dummy byte if needed
+                # Extend command with page_size zeros to clock out the data
+                resp = self.__spi.xfer2(cmd)
+                # The first few bytes are command echoes; the last 'page_size' bytes are actual data
+                print(hex(resp[0]))
+                data = resp[-2111:]
+                self.__file.write(bytearray(data))

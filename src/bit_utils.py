@@ -25,3 +25,9 @@ def print_feature_table(feature_value, bit_definitions):
         enabled = extract_bit(feature_value, bit)
         status = 'Yes' if enabled else 'No'
         print(f"{bit:>3} | {name:<25} | {status}")
+
+def high_byte(bytes):
+    return bytes >> 8
+
+def low_byte(bytes):
+    return bytes & 0xFF
