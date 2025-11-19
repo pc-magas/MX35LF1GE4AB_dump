@@ -67,6 +67,10 @@ class SPIDump:
         for block in range(self.__total_blocks):
             for page in range(self.__pages_per_block):
                 print(f"dumping block {block} page {page}")
+                
+                if (block == self.__total_blocks-1) and (page == self.__pages_per_block-1):
+                    (result, status) = self.__send_command(0x3F, page_addr)
+                
                 row = (block << 6) | page
                 addr24 = [high_byte(row), low_byte(row), 0]
 
