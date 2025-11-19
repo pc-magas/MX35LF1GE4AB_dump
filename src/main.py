@@ -22,7 +22,11 @@ args = parser.parse_args()
 filename = args.filename
 
 with open_file(filename) as f:
+    print("################################")
+    print(f"DUMPING DATA upon {filename}")
     dump = SPIDump(spi, f)
-    # dump.dump()
+    dump.dump()
 
+print("Terminate connections")
 spi.close()
+print("Exit")
