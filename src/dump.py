@@ -3,6 +3,9 @@ from typing import IO
 from time import sleep
 import os
 
+# Const
+PAGE_SIZE = 2112
+
 def poll_operation_complete(spi:SpiDev)-> int:
     """
     Poll the flash until the OIP (Operation In Progress) bit clears in feature address 0xC0.
@@ -22,26 +25,25 @@ def poll_operation_complete(spi:SpiDev)-> int:
     
     return status
 
+
 class SPIDump:
     def __init__(self, spi: SpiDev,
                  file: IO,
                  total_blocks: int = 1024,
-                 pages_per_block: int = 64,
-                 page_size: int = 2112):
+                 pages_per_block: int = 64):
         """
         Initialize the SPI dump with an existing SpiDev object and a file-like object.
         :spi: The Interface used from flash rom
         :file: The file handler to dump flash
         :total_blocks: blocks flash memory has
         :pages_per_block: total pages flash memory has
-        :page_size: bumber of bytes each page has
         """
         self.__spi = spi
         self.__file = file
 
         self.__total_blocks=total_blocks
         self.__pages_per_block=pages_per_block
-        self.__page_size=page_size
+        self.__page_size=PAGE_SIZE
 
 
     def __reset(self):
