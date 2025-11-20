@@ -61,23 +61,19 @@ class SPIDump:
         # PAGE READ (0x13)
         (result,status)=self.__send_command(0x13, page_addr)
 
-        # READ (0x31)
-        (result,status) = self.__send_command(0x31, page_addr)
-
         for block in range(self.__total_blocks):
             for page in range(self.__pages_per_block):
                 print(f"dumping block {block} page {page}")
-                
-                if (block == self.__total_blocks-1) and (page == self.__pages_per_block-1):
-                    (result, status) = self.__send_command(0x3F, page_addr)
-                
-                row = (block << 6) | page
-                addr24 = [high_byte(row), low_byte(row), 0]
+                if (page == self.__pages_per_block-1):
+                    (result, status) = self.__send_command(0x3F, [0x00, 0x00, 0x00])
+                else:
+                    (result, status) = self.__send_command(0x31, page_addr)
 
-                cmd = [0x03] + addr24 + [0x00] + [0x00] * self.__page_size
-                resp = self.__spi.xfer2(cmd)
-                data = resp[-self.__page_size:]
+                address = (block << 6) | page
+                cmd = [0x03, high_byte(address), low_byte(address), 0]
+                pad = [0x00] * self.__page_size
+                resp = self.__spi.xfer2(cmd+pad)
 
-                self.__file.write(bytearray(data))
+                self.__file.write(bytearray(resp))
                 self.__file.flush()
                 os.fsync(self.__file.fileno())
