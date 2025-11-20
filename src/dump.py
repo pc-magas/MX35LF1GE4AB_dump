@@ -1,7 +1,6 @@
 from spidev import SpiDev
 from typing import IO
 from time import sleep
-from bit_utils import high_byte,low_byte
 import os
 
 def poll_operation_complete(spi:SpiDev)-> int:
@@ -69,10 +68,12 @@ class SPIDump:
                 else:
                     (result, status) = self.__send_command(0x31, page_addr)
 
-                address = (block << 6) | page
-                cmd = [0x03, high_byte(address), low_byte(address), 0]
+                cmd = [0x03, 0x00, 0x00, 0]
+                # By padding data we allow it to read data
                 pad = [0x00] * self.__page_size
                 resp = self.__spi.xfer2(cmd+pad)
+
+                poll_operation_complete(self.__spi)
 
                 self.__file.write(bytearray(resp))
                 self.__file.flush()
