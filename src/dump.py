@@ -3,6 +3,8 @@ from typing import IO
 from time import sleep
 import os
 
+from bit_utils import high_byte, low_byte
+
 # Const
 PAGE_SIZE = 2112
 
@@ -55,28 +57,39 @@ class SPIDump:
         status = poll_operation_complete(self.__spi)
         return result, status
 
+    def __generate_address(self,block :int, page :int)->list:
+        row = (block << 6) | page
+        return [high_byte(row), low_byte(row), 0x00]
+
     def dump(self):
         self.__reset()
-        page_addr = [0x00, 0x00, 0x00]
-
-        # PAGE READ (0x13)
-        (result,status)=self.__send_command(0x13, page_addr)
+        sleep(1)
 
         for block in range(self.__total_blocks):
             for page in range(self.__pages_per_block):
                 print(f"dumping block {block} page {page}")
+
+                page_addr = self.__generate_address(block,page)
+                (result, status) = self.__send_command(0x13, page_addr)
+
                 if (page == self.__pages_per_block-1):
                     (result, status) = self.__send_command(0x3F, [0x00, 0x00, 0x00])
                 else:
                     (result, status) = self.__send_command(0x31, page_addr)
 
-                cmd = [0x03, 0x00, 0x00, 0]
+                col_addr = 0x000  # start of page
+                col_bytes = [(col_addr >> 8) & 0x0F, col_addr & 0xFF]
+
+                cmd = [0x03]+ col_bytes + [0x00]
                 # By padding data we allow it to read data
                 pad = [0x00] * self.__page_size
+
                 resp = self.__spi.xfer2(cmd+pad)
+                data = resp[-self.__page_size:]
 
-                poll_operation_complete(self.__spi)
+                self.__file.write(bytearray(data))
 
-                self.__file.write(bytearray(resp))
                 self.__file.flush()
                 os.fsync(self.__file.fileno())
+
+                sleep(1)
